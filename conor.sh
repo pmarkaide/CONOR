@@ -27,14 +27,32 @@ for dir in "${INCLUDE_DIRS[@]}"; do
     fi
 done
 
-# Correct norminette errors
+# Correct norminette errors and track fixed files
+FIXED_FILES=()
+
 for dir in "${INCLUDE_DIRS[@]}"; do
-	if [ -d "$dir" ]; then
-		find "$dir" -type f \( -name "*.c" -or -name "*.h" \) -exec python3 -m c_formatter_42 {} \; 1>/dev/null
-	else
+    if [ -d "$dir" ]; then
+        for file in $(find "$dir" -type f \( -name "*.c" -or -name "*.h" \)); do
+            tmp_file=$(mktemp)
+            cp "$file" "$tmp_file"
+            python3 -m c_formatter_42 "$file" 1>/dev/null
+            # Compare the formatted file with the original file
+            if ! cmp -s "$file" "$tmp_file"; then
+                FIXED_FILES+=("$file")
+            fi
+            rm "$tmp_file"
+        done
+    else
         echo "[ERROR] Directory $dir does not exist."
-	fi
+    fi
 done
+
+# Print the files that were fixed
+if [ ${#FIXED_FILES[@]} -ne 0 ]; then
+     for file in "${FIXED_FILES[@]}"; do
+        echo "[FIX] $file"
+    done
+fi
 
 # Run norminette and check for errors
 ERROR_FOUND=false
