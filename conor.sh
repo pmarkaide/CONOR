@@ -13,12 +13,26 @@ if ! pip3 show "$PACKAGE_NAME" > /dev/null 2>&1; then
     pip3 install --user "$PACKAGE_NAME"
 fi
 
+# Check and add newline at the end of files if missing
+for dir in "${INCLUDE_DIRS[@]}"; do
+    if [ -d "$dir" ]; then
+        for file in $(find "$dir" -type f \( -name "*.c" -or -name "*.h" \)); do
+            if [ -n "$(tail -c 1 "$file")" ]; then
+                echo >> "$file"
+                echo "[INFO] Added newline to $file"
+            fi
+        done
+    else
+        echo "[ERROR] Directory $dir does not exist."
+    fi
+done
+
 # Correct norminette errors
 for dir in "${INCLUDE_DIRS[@]}"; do
 	if [ -d "$dir" ]; then
 		find "$dir" -type f \( -name "*.c" -or -name "*.h" \) -exec python3 -m c_formatter_42 {} \; 1>/dev/null
 	else
-        echo "Directory $dir does not exist."
+        echo "[ERROR] Directory $dir does not exist."
 	fi
 done
 
@@ -34,14 +48,14 @@ for dir in "${INCLUDE_DIRS[@]}"; do
             ERROR_FILES+=($error_files)
 		fi
 	else
-		echo "Directory $dir does not exist."
+		echo "[ERROR] Directory $dir does not exist."
 	fi
 done
 
 # Raise a warning message if errors were found
 if $ERROR_FOUND; then
 	for file in "${ERROR_FILES[@]}"; do
-        echo "[ERROR] $file has norminette errors"
+        echo "[ERROR] $file still has norminette errors"
     	done
 	else
 		echo "[PASS] Norminette OK for all files"
