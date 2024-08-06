@@ -17,7 +17,6 @@ fi
 for dir in "${INCLUDE_DIRS[@]}"; do
 	if [ -d "$dir" ]; then
 		find "$dir" -type f \( -name "*.c" -or -name "*.h" \) -exec python3 -m c_formatter_42 {} \; 1>/dev/null
-		echo "Fixing norminette errors..."
 	else
         echo "Directory $dir does not exist."
 	fi
@@ -31,6 +30,8 @@ for dir in "${INCLUDE_DIRS[@]}"; do
 		output=$(norminette -R CheckForbiddenSourceHeaders "$dir" 2>&1)
 	   	if echo "$output" | grep -E '\.c: Error!|\.h: Error!' > /dev/null; then
 			ERROR_FOUND=true
+			error_files=$(echo "$output" | grep -E '\.c: Error!|\.h: Error!' | awk -F: '{print $1}')
+            ERROR_FILES+=($error_files)
 		fi
 	else
 		echo "Directory $dir does not exist."
@@ -39,11 +40,11 @@ done
 
 # Raise a warning message if errors were found
 if $ERROR_FOUND; then
-    echo "Warning: Code still contains norminette errors."
-	echo "Most likely error is not ending the file with a newline."
-	echo "Fix errors and rerun conor."
+	for file in "${ERROR_FILES[@]}"; do
+        echo "[ERROR] $file has norminette errors"
+    	done
 	else
-	echo "Norminette OK"
+		echo "[PASS] Norminette OK for all files"
 fi
 
 ## TODO
