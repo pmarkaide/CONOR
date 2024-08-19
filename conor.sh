@@ -6,6 +6,27 @@ PACKAGE_NAME="c-formatter-42"
 # Directory and file lists
 INCLUDE_DIRS=("src" "include")
 
+# URL of the raw conor.sh file on GitHub
+GITHUB_URL="https://raw.githubusercontent.com/pmarkaide/CONOR_correct_norminette/main/conor.sh"
+
+# Determine the script's directory and path
+SCRIPT_PATH=$(realpath "$0")
+SCRIPT_DIR=$(dirname "$SCRIPT_PATH")
+
+# Fetch the latest version of the conor.sh file from GitHub
+LATEST_FILE=$(mktemp)
+curl -s -o "$LATEST_FILE" "$GITHUB_URL"
+
+# Compare the fetched file with the local version
+if ! cmp -s "$SCRIPT_PATH" "$LATEST_FILE"; then
+    echo "There is an updated version of conor.sh available."
+    read -p "Do you want to update to the latest version? (y/n): " choice
+    if [ "$choice" = "y" ]; then
+        cp "$LATEST_FILE" "$SCRIPT_PATH"
+        echo "conor.sh has been updated. Please re-run the script."
+        exit 0
+    fi
+fi
 
 # Install c-formatter-42 if needed
 if ! pip3 show "$PACKAGE_NAME" > /dev/null 2>&1; then
